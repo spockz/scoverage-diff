@@ -26,36 +26,36 @@ object ScoverageDiff extends App {
     measuredClass.copy(fullClassName = s"${measuredClass.fullClassName}-$annotation")
 
 
+  val packageLevelDiff: Map[String, Seq[MeasuredPackage]] =
+    Util.merge(
+      originScoverage.packages.groupBy(_.name),
+      targetScoverage.packages.groupBy(_.name).map(t => t.copy(_2 = t._2.map(annotateMeasuredPackageName("target", _))))
+    )
+
+
+  val reportTable = createTable[MeasuredPackage](packageLevelDiff, _.name.startsWith("target"))
+
+  println()
+  println("Overview of coverage changes per package: \n")
+  println(Tabulator(Seq("package name", "previous coverage", "current coverage") +: reportTable))
+
+
+  val classLevelDiff =
+    Util.merge(
+      originScoverage.classes.toSeq.groupBy(_.fullClassName),
+      targetScoverage.classes.groupBy(_.fullClassName).map(t => t.copy(_2 = t._2.toSeq.map(annotateMeasuredClassName("target", _))))
+    )
+
+
+  val reportClassLevelTable = createTable[MeasuredClass](classLevelDiff, _.fullClassName.endsWith("target"))
+
+  println()
+  println("Overview of coverage changes per class: \n")
+  println(Tabulator(Seq("class name", "previous coverage", "current coverage") +: reportClassLevelTable))
+
+
   val difference = targetScoverage.statementCoverage - originScoverage.statementCoverage
   if (difference < 0) {
-
-    val packageLevelDiff: Map[String, Seq[MeasuredPackage]] =
-      Util.merge(
-        originScoverage.packages.groupBy(_.name),
-        targetScoverage.packages.groupBy(_.name).map(t => t.copy(_2 = t._2.map(annotateMeasuredPackageName("target", _))))
-      )
-
-
-    val reportTable = createTable[MeasuredPackage](packageLevelDiff, _.name.startsWith("target"))
-
-    println()
-    println("Overview of degredation per package: \n")
-    println(Tabulator(Seq("package name", "previous coverage", "current coverage") +: reportTable))
-
-
-    val classLevelDiff =
-      Util.merge(
-        originScoverage.classes.toSeq.groupBy(_.fullClassName),
-        targetScoverage.classes.groupBy(_.fullClassName).map(t => t.copy(_2 = t._2.toSeq.map(annotateMeasuredClassName("target", _))))
-      )
-
-
-    val reportClassLevelTable = createTable[MeasuredClass](classLevelDiff, _.fullClassName.endsWith("target"))
-
-    println()
-    println("Overview of degredation per class: \n")
-    println(Tabulator(Seq("class name", "previous coverage", "current coverage") +: reportClassLevelTable))
-
     sys.exit(1)
   } else {
     sys.exit(0)
@@ -87,7 +87,7 @@ object Tabulator {
     val printer = rowPrinter(builder, maxLenghts.toArray)(_)
 
     printer(table.head)
-    printer(maxLenghts.map(n => "-".repeat(n)))
+    printer(maxLenghts.map(n => "-" * n))
 
     table.tail.foreach(printer)
 

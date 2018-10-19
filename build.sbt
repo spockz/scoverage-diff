@@ -1,6 +1,7 @@
+organization := "com.github.spockz"
 name := "scoverage-diff"
 
-version := "0.1"
+version := "0.2.1"
 
 scalaVersion := "2.12.7"
 
